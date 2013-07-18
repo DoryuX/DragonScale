@@ -1,4 +1,4 @@
-### DragonScale is provided under the MIT License.
+### [DragonScale](https://github.com/DoryuX/DragonScale) is provided under the MIT License.
 
 > The MIT License (MIT)
 > 
