@@ -6,7 +6,7 @@ this engine will grow as more research is done.
 ## Dependencies
 
 [**Simple DirectMedia Layer**](http://www.libsdl.org/tmp/download-2.0.php) - Provides joystick support as well as other hardware devices and OpenGL.
-### In Solution Explorer
+#### In Solution Explorer
 - Right-click project, go to properties.
 - Under VC++ Directories
 	- Add '<SDL2 Path>/SDL2-*/include' to 'Include Directories'
@@ -18,7 +18,7 @@ this engine will grow as more research is done.
 ---
 
 [**GLEW**](http://glew.sourceforge.net/) - Extension loading library.
-### For Visual C++ 2012 
+#### For Visual C++ 2012 
 - Build from source in Visual Studio 2012.
 - Break up comments to compile.
 	- Starting at '<GLEW Path>/glew-*/build/glew.rc', line 59
@@ -33,7 +33,7 @@ Becomes
 > 
 > "Copyright (C) 2002-2008, Milan Ikits <milan ikits[]ieee org>\r\n"
 
-### In Solution Explorer
+#### In Solution Explorer
 - Right-click project, go to properties.
 - Under VC++ Directories
 	- Add '<GLEW Path>/glew-*/include' to 'Include Directories'
