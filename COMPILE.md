@@ -1,4 +1,4 @@
-# DragonScale Install Guide
+# DragonScale Compile Guide
 
 ## Adding the Dependencies
 
