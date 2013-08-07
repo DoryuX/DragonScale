@@ -3,6 +3,7 @@
 #include <string>
 #include <cmath>
 
+#include <GL/glew.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
 
@@ -60,6 +61,13 @@ int main( int argc, char* argv[] ) {
 	mainContext = SDL_GL_CreateContext( mainWindow );
 
 	SDL_GL_SetSwapInterval( 1 );
+
+	
+	glewExperimental = true;
+	if ( glewInit() != GLEW_OK ) {
+		fprintf( stderr, "Failed to initialize GLEW!\n" );
+		SDLDie( "Glew could not be initialized." );
+	}
 
 	glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
 

@@ -41,9 +41,9 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>L:\Programs\SDL2-2.0.0\include;$(IncludePath)</IncludePath>
-    <LibraryPath>L:\Programs\SDL2-2.0.0\lib\x86;$(LibraryPath)</LibraryPath>
-    <ReferencePath>L:\Programs\SDL2-2.0.0\lib\x86;$(ReferencePath)</ReferencePath>
+    <IncludePath>C:\GLEW\glew-1.10.0\include;L:\Programs\SDL2-2.0.0\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\GLEW\glew-1.10.0\lib\Release\Win32;L:\Programs\SDL2-2.0.0\lib\x86;$(LibraryPath)</LibraryPath>
+    <ReferencePath>C:\GLEW\glew-1.10.0\bin\Release\Win32;L:\Programs\SDL2-2.0.0\lib\x86;$(ReferencePath)</ReferencePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -60,7 +60,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2test.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2test.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
