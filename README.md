@@ -9,4 +9,4 @@ this engine will grow as more research is done.
 
 [**GLEW**](http://glew.sourceforge.net/) - Extension loading library.
 
-See the [**INSTALL GUIDE**](https://github.com/DoryuX/DragonScale/blob/master/INSTALL.md) for more details.
+See the [**COMPILE GUIDE**](https://github.com/DoryuX/DragonScale/blob/master/COMPILE.md) for more details.
