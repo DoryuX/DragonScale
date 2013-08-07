@@ -30,6 +30,7 @@ this engine will grow as more research is done.
 Becomes
 
 > "The OpenGL Extension Wrangler Library\r\n"
+> 
 > "Copyright (C) 2002-2008, Milan Ikits <milan ikits[]ieee org>\r\n"
 
 ### In Solution Explorer
