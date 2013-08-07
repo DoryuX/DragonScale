@@ -6,18 +6,10 @@
 #include <SDL.h>
 #include <SDL_opengl.h>
 
-void Display_InitGL( void ) {
-	glShadeModel( GL_SMOOTH );
-
-	glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
-
-	glClearDepth( 1.0f );
-
-	glEnable( GL_DEPTH_TEST );
-
-	glDepthFunc( GL_LEQUAL );
-
-	glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
+void SDLDie( const char* msg ) {
+	printf( "%s: %s\n", msg, SDL_GetError() );
+	SDL_Quit();
+	exit( 1 );
 }
 
 void Perspective( GLfloat fovY, GLfloat aspect, GLfloat zNear, GLfloat zFar ) {
@@ -30,84 +22,76 @@ void Perspective( GLfloat fovY, GLfloat aspect, GLfloat zNear, GLfloat zFar ) {
 	glFrustum( -fw, fw, -fh, fh, zNear, zFar );
 }
 
-int Display_SetViewport( int width, int height ) {
-	GLfloat ratio;
+int main( int argc, char* argv[] ) {
 
-	if ( height == 0 ) {
-		height = 1;
+	// Initialize video subsystem.
+	if ( SDL_Init( SDL_INIT_VIDEO ) < 0 ) {
+		SDLDie( "Unable to initialize SDL." );
 	}
 
-	ratio = ( GLfloat ) width / ( GLfloat ) height;
+	SDL_Window* mainWindow;
+	SDL_GLContext mainContext;
 
-	glViewport( 0, 0, ( GLsizei ) width, ( GLsizei ) height );
-
-	glMatrixMode( GL_PROJECTION );
-	glLoadIdentity();
-
-	Perspective( 45.0f, ratio, 0.1f, 100.0f );
-
-	glMatrixMode( GL_MODELVIEW );
-
-	glLoadIdentity();
-
-	return 1;
-}
-
-void Display_Render( SDL_Renderer* renderer ) {
-	glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
-
-	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
-	glLoadIdentity();
-	glTranslatef( -1.5f, 0.0f, -6.0f );
-
-	glColor3f( 1.0f, 0.0f, 0.0f );
-
-	glBegin( GL_TRIANGLES );
-		glVertex3f(  0.0f,  1.0f, 0.0f );
-		glVertex3f( -1.0f, -1.0f, 0.0f );
-		glVertex3f(  1.0f, -1.0f, 0.0f );
-	glEnd();
-
-	glTranslatef( 3.0f, 0.0f, 0.0f );
-
-	glColor3f( 0.0f, 0.0f, 1.0f );
- 
-    glBegin( GL_QUADS );             
-      glVertex3f( -1.0f,  1.0f, 0.0f ); 
-      glVertex3f(  1.0f,  1.0f, 0.0f ); 
-      glVertex3f(  1.0f, -1.0f, 0.0f ); 
-      glVertex3f( -1.0f, -1.0f, 0.0f ); 
-    glEnd( ); 
-
-	SDL_RenderPresent( renderer );
-}
-
-int main( int argc, char* argv[] ) {
-	SDL_Init( SDL_INIT_VIDEO );
-
-	SDL_Window* displayWindow;
-	SDL_Renderer* displayRenderer;
-	SDL_RendererInfo displayRendererInfo;
+	SDL_Event event;
+	int status = 0;
 
 	const int WINDOW_WIDTH = 800;
 	const int WINDOW_HEIGHT = 600;
+	const char* TITLE = "DragonScale";
 
-	SDL_CreateWindowAndRenderer( WINDOW_WIDTH, WINDOW_HEIGHT, 
-								SDL_WINDOW_OPENGL, 
-								&displayWindow, 
-								&displayRenderer );
+	// Request OpenGL Context
+	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 4 );
+	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 2 );
 
-	SDL_GetRendererInfo( displayRenderer, &displayRendererInfo );
+	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+	SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24 );	// 24-bit Z buffer.
 
-	Display_InitGL();
+	mainWindow = SDL_CreateWindow( TITLE,
+								   SDL_WINDOWPOS_CENTERED,
+								   SDL_WINDOWPOS_CENTERED,
+								   WINDOW_WIDTH,
+								   WINDOW_HEIGHT,
+								   SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN );
 
-	Display_SetViewport( WINDOW_WIDTH, WINDOW_HEIGHT );
+	if ( !mainWindow ) {
+		SDLDie( "Unable to create a window." );
+	}
 
-	Display_Render( displayRenderer );
+	mainContext = SDL_GL_CreateContext( mainWindow );
 
-	SDL_Delay( 5000 );
+	SDL_GL_SetSwapInterval( 1 );
 
+	glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
+
+	while ( true ) {
+		glClear( GL_COLOR_BUFFER_BIT );
+
+		SDL_GL_SwapWindow( mainWindow );
+
+		while ( SDL_PollEvent( &event ) ) {
+			switch( event.type ) {
+				case SDL_KEYDOWN:					
+					break;
+				case SDL_KEYUP:
+					if ( event.key.keysym.sym == SDLK_ESCAPE ) {
+						status = SDL_EventType::SDL_QUIT;
+					}
+					break;
+				case SDL_QUIT:
+					status = SDL_EventType::SDL_QUIT;
+					break;
+			}
+		}
+
+		if ( status == SDL_EventType::SDL_QUIT ) {
+			break;
+		}
+	}
+
+	// Delete the OpenGL context, destroy window, shutdown SDL.
+	SDL_GL_DeleteContext( mainContext );
+	SDL_DestroyWindow( mainWindow );
 	SDL_Quit();
+
 	return 0;
 }
