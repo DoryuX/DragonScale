@@ -11,6 +11,7 @@
 	- Add '<SDL2 Path>/SDL2-*/lib/x86' to 'Library Directories'
 - Under Linker > Input
 	- Add 'SDL2.lib', 'SDL2main.lib', and 'SDL2test.lib' to 'Additional Dependencies'
+- Copy and Paste 'SDL2.dll' in the directory that contains the source code for this project.
 
 ---
 
@@ -42,3 +43,4 @@ etc.
 	- Add '<GLEW Path>/glew-*/lib/Release/Win32' to 'Library Directories'
 - Under Linker > Input
 	- Add 'glew32.lib' to 'Additional Dependencies'
+- Copy and Paste 'glew32.dll' in the directory that contains the source code for this project.

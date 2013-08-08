@@ -23,6 +23,47 @@ void Perspective( GLfloat fovY, GLfloat aspect, GLfloat zNear, GLfloat zFar ) {
 	glFrustum( -fw, fw, -fh, fh, zNear, zFar );
 }
 
+int PollKeys( void ) {
+	int status = 0;
+	SDL_Event event;
+
+	while ( SDL_PollEvent( &event ) ) {
+		switch( event.type ) {
+			case SDL_KEYDOWN:					
+				break;
+			case SDL_KEYUP:
+				if ( event.key.keysym.sym == SDLK_ESCAPE ) {
+					status = SDL_EventType::SDL_QUIT;
+				}
+				break;
+			case SDL_QUIT:
+				status = SDL_EventType::SDL_QUIT;
+				break;
+		}
+	}
+
+	return status;
+}
+
+void Render( const GLuint vertexID, const GLuint vertexBuffer, 
+			 const GLuint attrib, const GLuint size, const GLuint stride ) {
+	glClear( GL_COLOR_BUFFER_BIT );
+
+	glEnableVertexAttribArray( vertexID );
+	glBindBuffer( GL_ARRAY_BUFFER, vertexBuffer );
+	glVertexAttribPointer(
+		attrib,
+		size,
+		GL_FLOAT,
+		GL_FALSE,
+		stride,
+		( void* ) 0 );
+
+	glDrawArrays( GL_TRIANGLES, 0, size );
+
+	glDisableVertexAttribArray( vertexID );
+}
+
 int main( int argc, char* argv[] ) {
 
 	// Initialize video subsystem.
@@ -33,16 +74,13 @@ int main( int argc, char* argv[] ) {
 	SDL_Window* mainWindow;
 	SDL_GLContext mainContext;
 
-	SDL_Event event;
-	int status = 0;
-
 	const int WINDOW_WIDTH = 800;
 	const int WINDOW_HEIGHT = 600;
 	const char* TITLE = "DragonScale";
 
 	// Request OpenGL Context
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 4 );
-	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 2 );
+	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 3 );
 
 	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
 	SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24 );	// 24-bit Z buffer.
@@ -62,38 +100,41 @@ int main( int argc, char* argv[] ) {
 
 	SDL_GL_SetSwapInterval( 1 );
 
-	
 	glewExperimental = true;
 	if ( glewInit() != GLEW_OK ) {
 		fprintf( stderr, "Failed to initialize GLEW!\n" );
 		SDLDie( "Glew could not be initialized." );
 	}
 
-	glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
+	glClearColor( 0.0f, 0.0f, 1.0f, 1.0f );
 
+	GLuint vertexArrayID;
+	glGenVertexArrays( 1, &vertexArrayID );
+	glBindVertexArray( vertexArrayID );
+
+	static const GLfloat vertexBufferData[] = {
+		-1.0f, -1.0f, 0.0f,
+		 1.0f, -1.0f, 0.0f,
+		 0.0f,  1.0f, 0.0f
+	};
+
+	GLuint vertexBuffer;
+	glGenBuffers( 1, &vertexBuffer );
+	glBindBuffer( GL_ARRAY_BUFFER, vertexBuffer );
+	glBufferData( GL_ARRAY_BUFFER, 
+				sizeof( vertexBufferData ), 
+				vertexBufferData, 
+				GL_STATIC_DRAW );	
+
+	// Main Loop
 	while ( true ) {
-		glClear( GL_COLOR_BUFFER_BIT );
-
-		SDL_GL_SwapWindow( mainWindow );
-
-		while ( SDL_PollEvent( &event ) ) {
-			switch( event.type ) {
-				case SDL_KEYDOWN:					
-					break;
-				case SDL_KEYUP:
-					if ( event.key.keysym.sym == SDLK_ESCAPE ) {
-						status = SDL_EventType::SDL_QUIT;
-					}
-					break;
-				case SDL_QUIT:
-					status = SDL_EventType::SDL_QUIT;
-					break;
-			}
-		}
-
-		if ( status == SDL_EventType::SDL_QUIT ) {
+		if ( PollKeys() == SDL_EventType::SDL_QUIT ) {
 			break;
 		}
+
+		Render( 0, vertexBuffer, 0, 3, 0 );
+
+		SDL_GL_SwapWindow( mainWindow );		
 	}
 
 	// Delete the OpenGL context, destroy window, shutdown SDL.
