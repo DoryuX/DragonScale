@@ -1,5 +1,14 @@
 # DragonScale Compile Guide
 
+## Compiling Under Visual Studio 2012
+
+I ran into issues with Visual Studio giving me linker errors when looking for the CRT Debug libs. There's probably a better way to solve this, but after
+much searching I finally got the code to run.
+#### Visual Studio 2012 - In Solution Explorer
+- Right-click project, go to properties.
+- Under C/C++ > Preprocessor
+	- Remove '_DEBUG;' under 'Preprocessor Definitions'
+
 ## Adding the Dependencies
 
 [**Simple DirectMedia Layer**](http://www.libsdl.org/tmp/download-2.0.php) - Provides joystick support as well as other hardware devices and OpenGL.

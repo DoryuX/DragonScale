@@ -2,6 +2,8 @@
 #include <cstdio>
 #include <string>
 #include <cmath>
+#include <fstream>
+#include <vector>
 
 #include <GL/glew.h>
 #include <SDL.h>
@@ -11,6 +13,88 @@ void SDLDie( const char* msg ) {
 	printf( "%s: %s\n", msg, SDL_GetError() );
 	SDL_Quit();
 	exit( 1 );
+}
+
+GLuint LoadShaders( const char* vsFile, const char* fsFile ) {
+	// Create Shaders
+	GLuint vsID = glCreateShader( GL_VERTEX_SHADER );
+	GLuint fsID = glCreateShader( GL_FRAGMENT_SHADER );
+
+	// Read Vertex Shader
+	
+	std::string vsCode;
+	std::fstream vsStream;
+	vsStream.open( vsFile, std::ios::in );
+	
+	if ( vsStream.is_open() ) {
+		std::string line = "";
+
+		while ( std::getline( vsStream, line ) ) {
+			vsCode += "\n" + line;
+		}
+
+		vsStream.close();
+	}
+	
+
+	// Read Fragment Shader
+	std::string fsCode;
+	std::ifstream fsStream( fsFile, std::ios::in );
+
+	if ( fsStream.is_open() ) {
+		std::string line = "";
+
+		while ( std::getline( fsStream, line ) ) {
+			fsCode += "\n" + line;
+		}
+
+		fsStream.close();
+	}
+
+	GLint result = GL_FALSE;
+	int infoLogLength;
+
+	// Compile Vertex Shader
+	char const* vSourcePointer = vsCode.c_str();
+	glShaderSource( vsID, 1, &vSourcePointer, NULL );
+	glCompileShader( vsID );
+
+	// Check Vertex Shader
+	glGetShaderiv( vsID, GL_COMPILE_STATUS, &result );
+	glGetShaderiv( vsID, GL_INFO_LOG_LENGTH, &infoLogLength );
+	std::vector< char > vsErrorMessage( infoLogLength );
+	glGetShaderInfoLog( vsID, infoLogLength, NULL, &vsErrorMessage[0] );
+	fprintf( stdout, "%s\n", &vsErrorMessage[0] );
+
+	// Compile Fragment Shader
+	char const* fSourcePointer = fsCode.c_str();
+	glShaderSource( fsID, 1, &fSourcePointer, NULL );
+	glCompileShader( fsID );
+
+	// Check Fragment Shader
+	glGetShaderiv( fsID, GL_COMPILE_STATUS, &result );
+	glGetShaderiv( fsID, GL_INFO_LOG_LENGTH, &infoLogLength );
+	std::vector< char > fsErrorMessage( infoLogLength );
+	glGetShaderInfoLog( fsID, infoLogLength, NULL, &fsErrorMessage[0] );
+	fprintf( stdout, "%s\n", &fsErrorMessage[0] );
+
+	// Link the Program
+	GLuint programID = glCreateProgram();
+	glAttachShader( programID, vsID );
+	glAttachShader( programID, fsID );
+	glLinkProgram( programID );
+
+	// Check the Program
+	glGetProgramiv( programID, GL_LINK_STATUS, &result );
+	glGetProgramiv( programID, GL_INFO_LOG_LENGTH, &infoLogLength );
+	std::vector< char > programErrorMessage( std::max( infoLogLength, int(1) ) );
+	glGetProgramInfoLog( programID, infoLogLength, NULL, &programErrorMessage[0] );
+	fprintf( stdout, "%s\n", &programErrorMessage[0] );
+
+	glDeleteShader( vsID );
+	glDeleteShader( fsID );
+
+	return programID;
 }
 
 void Perspective( GLfloat fovY, GLfloat aspect, GLfloat zNear, GLfloat zFar ) {
@@ -125,6 +209,10 @@ int main( int argc, char* argv[] ) {
 				sizeof( vertexBufferData ), 
 				vertexBufferData, 
 				GL_STATIC_DRAW );	
+
+	// GLSL Shaders
+	GLuint programID = LoadShaders( "simple.vert", "simple.frag" );
+	glUseProgram( programID );
 
 	// Main Loop
 	while ( true ) {
