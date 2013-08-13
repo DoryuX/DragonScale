@@ -9,7 +9,7 @@ class Vector3 {
 public:
 	Vector3( void );
 	~Vector3( void );
-	Vector3( float x, float y, float z );
+	Vector3( float xx, float yy, float zz );
 
 	float LengthSquared( void ) const;
 	float Length( void ) const;
@@ -33,6 +33,10 @@ public:
 	float y;
 	float z;
 };
+
+inline Vector3 operator*( float f, const Vector3& v ) {
+	return v * f;
+}
 
 inline float Dot( const Vector3& v1, const Vector3& v2 ) {
 	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
