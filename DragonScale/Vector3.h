@@ -1,5 +1,5 @@
-#ifndef VECTOR_H
-#define VECTOR_H
+#ifndef VECTOR3_H
+#define VECTOR3_H
 
 #include <cmath>
 
