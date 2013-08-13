@@ -18,13 +18,13 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Matrix.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Vector3.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Point3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Matrix4.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -37,13 +37,13 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Matrix.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Vector3.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Point3.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Matrix4.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
