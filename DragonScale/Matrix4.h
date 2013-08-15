@@ -1,6 +1,8 @@
 #ifndef MATRIX4_H
 #define MATRIX4_H
 
+#include "Vector3.h"
+
 namespace Math {
 
 class Matrix4
@@ -37,6 +39,20 @@ inline Matrix4 Multiply( const Matrix4& m1, const Matrix4& m2 ) {
 	}
 
 	return r;
+}
+
+// Transform Matrix Multiply
+inline Vector3 Multiply( const Matrix4& m, const Vector3& v ) {
+	Vector3 r;
+
+	for( int i = 0; i < 3; ++i ) {
+		for( int j = 0; j < 3; ++j ) {
+			r[ i ] = m.c[ i ][ 0 ] * v.x +
+					 m.c[ i ][ 1 ] * v.y +
+					 m.c[ i ][ 2 ] * v.z +
+					 m.c[ i ][ 3 ] * 1.0f;
+		}
+	}
 }
 
 }
