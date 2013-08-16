@@ -52,7 +52,10 @@ Vector3 Vector3::operator*( const float s ) const {
 }
 
 Vector3 Vector3::operator/( const float s ) const {
-	assert( s != 0 );
+	// Can't divide by zero.
+	if ( s == 0 ) {
+		return Vector3( 0.0f, 0.0f, 0.0f );
+	}
 	
 	float inv = 1.0f / s;
 

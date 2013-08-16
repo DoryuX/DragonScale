@@ -13,6 +13,9 @@
 #include "Matrix4.h"
 
 const float PI_OVER_360 = ( float ) M_PI / 360.0f;
+const int WINDOW_WIDTH = 800;
+const int WINDOW_HEIGHT = 600;
+const char* TITLE = "DragonScale";
 
 static bool moving = false;
 static float camera_pos[ 3 ] = { 0.0f, 0.0f, 5.0f };
@@ -107,51 +110,56 @@ GLuint LoadShaders( const char* vsFile, const char* fsFile ) {
 	return programID;
 }
 
+Math::Matrix4 Frustum( float xNeg, float xPos, float yNeg, float yPos, float zNear, float zFar ) {
+	Math::Matrix4 m;
+
+	m.c[ 0 ][ 0 ] = 2.0f * zNear / ( xPos - xNeg );
+	m.c[ 0 ][ 1 ] = 0.0f;
+	m.c[ 0 ][ 2 ] = 0.0f;
+	m.c[ 0 ][ 3 ] = 0.0f;
+
+	m.c[ 1 ][ 0 ] = 0.0f;
+	m.c[ 1 ][ 1 ] = 2.0f * zNear / ( yPos - yNeg );
+	m.c[ 1 ][ 2 ] = 0.0f;
+	m.c[ 1 ][ 3 ] = 0.0f;
+
+	m.c[ 2 ][ 0 ] =  ( xPos + xNeg )  / ( xPos - xNeg );
+	m.c[ 2 ][ 1 ] =  ( yPos + yNeg )  / ( yPos - yNeg );
+	m.c[ 2 ][ 2 ] = -( zFar + zNear ) / ( zFar - zNear );
+	m.c[ 2 ][ 3 ] = -1.0f;
+
+	m.c[ 3 ][ 0 ] = 0.0f;
+	m.c[ 3 ][ 1 ] = 0.0f;
+	m.c[ 3 ][ 2 ] = -2.0f * zFar * zNear / ( zFar - zNear );
+	m.c[ 3 ][ 3 ] = 0.0f;
+
+	return m;
+}
+
 Math::Matrix4 Perspective( GLfloat fovY, GLfloat aspect, GLfloat zNear, GLfloat zFar ) {
-	GLfloat fh = tanf( fovY * PI_OVER_360 ) * zNear;
+	GLfloat scale = tanf( fovY * PI_OVER_360 ) * zNear;
+	GLfloat right = aspect * scale;
+	GLfloat left = -right;
+	GLfloat top = scale;
+	GLfloat bottom = -top;
 
-	GLfloat xmin = -fh;
-	GLfloat ymin = -fh;
-
-	GLfloat width = fh - xmin;
-	GLfloat height = fh - ymin;
-	
-	GLfloat depth = zFar - zNear;
-	GLfloat q = -( zFar + zNear ) / depth;
-	GLfloat qn = -2 * ( zFar * zNear ) / depth;
-
-	GLfloat w = 2 * zNear / width;
-	w = w / aspect;
-	GLfloat h = 2 * zNear / height;
-
-	return Math::Matrix4(    w, 0.0f, 0.0f,  0.0f,
-						  0.0f,    h, 0.0f,  0.0f,
-						  0.0f, 0.0f,    q, -1.0f,
-						  0.0f, 0.0f,   qn,  0.0f );
+	return Frustum( left, right, bottom, top, zNear, zFar );
 }
 
 Math::Matrix4 LookAt( const Math::Vector3& camera, const Math::Vector3& target, const Math::Vector3& up ) {
-	Math::Vector3 axisZ = Math::Normalize( target - camera );
+	Math::Vector3 axisZ = Math::Normalize( camera - target );
 	Math::Vector3 axisX = Math::Normalize( Math::Cross( up, axisZ ) );
 	Math::Vector3 axisY = Math::Cross( axisZ, axisX );
-
-	// Right-handed Rotation Matrix
-	/* 
-	   TODO: Check Matrix Multiply vs. Dot product in right-most column?
-	   -Dot( axisX, camera )
-	   -Dot( axisY, camera )
-	   -Dot( axisZ, camera )
-	*/
 	
-	Math::Matrix4 rm = Math::Matrix4( axisX.x, axisX.y, axisX.z, 0.0f,
-									  axisY.x, axisY.y, axisY.z, 0.0f,
-									  axisZ.x, axisZ.y, axisZ.z, 0.0f,
+	Math::Matrix4 rm = Math::Matrix4( axisX.x, axisY.x, axisZ.x, 0.0f,
+									  axisX.y, axisY.y, axisZ.y, 0.0f,
+									  axisX.z, axisY.z, axisZ.z, 0.0f,
 										 0.0f,	  0.0f,	   0.0f, 1.0f );
 	
 	// Translation Matrix
 	Math::Matrix4 tm = Math::Translate( -camera );
 
-	return Math::Multiply( tm, rm );
+	return Math::Multiply( rm, tm );
 }
 
 int PollKeys( void ) {
@@ -183,6 +191,14 @@ int PollKeys( void ) {
 				}
 				if ( event.key.keysym.sym == SDLK_s ) {
 					camera_pos[ 2 ] += 1.0f;
+					moving = true;
+				}
+				if ( event.key.keysym.sym == SDLK_t ) {
+					target_pos[ 1 ] += 1.0f;
+					moving = true;
+				}
+				if ( event.key.keysym.sym == SDLK_g ) {
+					target_pos[ 1 ] -= 1.0f;
 					moving = true;
 				}
 				break;
@@ -230,10 +246,6 @@ int main( int argc, char* argv[] ) {
 
 	SDL_Window* mainWindow;
 	SDL_GLContext mainContext;
-
-	const int WINDOW_WIDTH = 800;
-	const int WINDOW_HEIGHT = 600;
-	const char* TITLE = "DragonScale";
 
 	// Request OpenGL Context
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 4 );
@@ -287,15 +299,20 @@ int main( int argc, char* argv[] ) {
 	GLuint programID = LoadShaders( "simple.vert", "simple.frag" );
 	glUseProgram( programID );
 
-	Math::Matrix4 projection = Perspective( 45.0f, 4.0f / 3.0f, 0.1f, 100.0f );
+	Math::Matrix4 projection = Perspective( 45.0f, WINDOW_WIDTH / WINDOW_HEIGHT, 0.1f, 100.0f );
 	Math::Matrix4 view = LookAt( Math::Vector3( camera_pos[ 0 ], camera_pos[ 1 ], camera_pos[ 2 ] ),
 								 Math::Vector3( target_pos[ 0 ], target_pos[ 1 ], target_pos[ 2 ] ),
 								 Math::Vector3( up_pos[ 0 ], up_pos[ 1 ], up_pos[ 2 ] ) );
 	Math::Matrix4 model = Math::Matrix4();
-	Math::Matrix4 mvp = Math::Multiply( projection, Math::Multiply ( view, model ) );
+	Math::Matrix4 mv = Math::Multiply( view, model );
 
-	GLuint mvpID = glGetUniformLocation( programID, "MVP" );
-	glUniformMatrix4fv( mvpID, 1, GL_TRUE, &mvp.c[ 0 ][ 0 ] );
+	// GLuint mvpID = glGetUniformLocation( programID, "MVP" );
+	GLuint projID = glGetUniformLocation( programID, "PROJ" );
+	GLuint mvID = glGetUniformLocation( programID, "MODELVIEW" );
+
+	// glUniformMatrix4fv( mvpID, 1, GL_FALSE, &mvp.c[ 0 ][ 0 ] );
+	glUniformMatrix4fv( projID, 1, GL_FALSE, &projection.c[ 0 ][ 0 ] );
+	glUniformMatrix4fv( mvID, 1, GL_TRUE, &mv.c[ 0 ][ 0 ] );
 
 	// Main Loop
 	while ( true ) {
@@ -308,8 +325,8 @@ int main( int argc, char* argv[] ) {
 						   Math::Vector3( target_pos[ 0 ], target_pos[ 1 ], target_pos[ 2 ] ),
 						   Math::Vector3( up_pos[ 0 ], up_pos[ 1 ], up_pos[ 2 ] ) );
 
-			mvp = Math::Multiply( projection, Math::Multiply ( view, model ) );
-			glUniformMatrix4fv( mvpID, 1, GL_FALSE, &mvp.c[ 0 ][ 0 ] );
+			mv = Math::Multiply( view, model );
+			glUniformMatrix4fv( mvID, 1, GL_TRUE, &view.c[ 0 ][ 0 ] );
 		}
 
 		Render( 0, vertexBuffer, 0, 3, 0 );
