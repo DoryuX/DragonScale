@@ -9,6 +9,11 @@
 #include <SDL.h>
 #include <SDL_opengl.h>
 
+#include "Vector3.h"
+#include "Matrix4.h"
+
+const float PI_OVER_360 = ( float ) M_PI / 360.0f;
+
 void SDLDie( const char* msg ) {
 	printf( "%s: %s\n", msg, SDL_GetError() );
 	SDL_Quit();
@@ -97,14 +102,50 @@ GLuint LoadShaders( const char* vsFile, const char* fsFile ) {
 	return programID;
 }
 
-void Perspective( GLfloat fovY, GLfloat aspect, GLfloat zNear, GLfloat zFar ) {
-	GLfloat fw = 0.0f;
-	GLfloat fh = 0.0f;
+Math::Matrix4 Perspective( GLfloat fovY, GLfloat aspect, GLfloat zNear, GLfloat zFar ) {
+	GLfloat fh = tanf( fovY * PI_OVER_360 ) * zNear;
 
-	fh = tanf( fovY / 360.0f * ( GLfloat ) M_PI ) * zNear;
-	fw = fh * aspect;
+	GLfloat xmin = -fh;
+	GLfloat ymin = -fh;
 
-	glFrustum( -fw, fw, -fh, fh, zNear, zFar );
+	GLfloat width = fh - xmin;
+	GLfloat height = fh - ymin;
+	
+	GLfloat depth = zFar - zNear;
+	GLfloat q = -( zFar + zNear ) / depth;
+	GLfloat qn = -2 * ( zFar * zNear ) / depth;
+
+	GLfloat w = 2 * zNear / width;
+	w = w / aspect;
+	GLfloat h = 2 * zNear / height;
+
+	return Math::Matrix4(    w, 0.0f, 0.0f,  0.0f,
+						  0.0f,    h, 0.0f,  0.0f,
+						  0.0f, 0.0f,    q, -1.0f,
+						  0.0f, 0.0f,   qn,  0.0f );
+}
+
+Math::Matrix4 LookAt( const Math::Vector3& camera, const Math::Vector3& target, const Math::Vector3& up ) {
+	Math::Vector3 axisZ = Math::Normalize( target - camera );
+	Math::Vector3 axisX = Math::Normalize( Math::Cross( up, axisZ ) );
+	Math::Vector3 axisY = Math::Cross( axisZ, axisX );
+
+	// Right-handed Rotation Matrix
+	/* 
+	   TODO: Check Matrix Multiply vs. Dot product in right-most column?
+	   -Dot( axisX, camera )
+	   -Dot( axisY, camera )
+	   -Dot( axisZ, camera )
+	*/
+	Math::Matrix4 rm = Math::Matrix4( axisX.x, axisX.y, axisX.z, 0.0f,
+									  axisY.x, axisY.y, axisY.z, 0.0f,
+									  axisZ.x, axisZ.y, axisZ.z, 0.0f,
+										 0.0f,	  0.0f,	   0.0f, 1.0f );
+
+	// Translation Matrix
+	Math::Matrix4 tm = Math::Translate( -camera );
+
+	return Math::Multiply( tm, rm );
 }
 
 int PollKeys( void ) {
@@ -213,6 +254,16 @@ int main( int argc, char* argv[] ) {
 	// GLSL Shaders
 	GLuint programID = LoadShaders( "simple.vert", "simple.frag" );
 	glUseProgram( programID );
+
+	Math::Matrix4 projection = Perspective( 45.0f, 4.0f / 3.0f, 0.1f, 100.0f );
+	Math::Matrix4 view = LookAt( Math::Vector3( 4.0f, 3.0f, 3.0f ),
+								 Math::Vector3( 0.0f, 0.0f, 0.0f ),
+								 Math::Vector3( 0.0f, 1.0f, 0.0f ) );
+	Math::Matrix4 model = Math::Matrix4();
+	Math::Matrix4 mvp = Math::Multiply( projection, Math::Multiply ( view, model ) );
+
+	GLuint mvpID = glGetUniformLocation( programID, "MVP" );
+	glUniformMatrix4fv( mvpID, 1, GL_TRUE, &mvp.c[ 0 ][ 0 ] );
 
 	// Main Loop
 	while ( true ) {

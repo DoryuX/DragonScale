@@ -5,6 +5,8 @@
 
 namespace Math {
 
+const float PI_OVER_180 = 0.1745329251f;
+
 class Matrix4
 {
 public:
@@ -23,9 +25,20 @@ public:
 	bool operator==( const Matrix4& m ) const;
 	bool operator!=( const Matrix4& m ) const;
 
+	Matrix4 operator+( const Matrix4& v ) const;
+	Matrix4 operator-( const Matrix4& v ) const;
+
+	Matrix4& operator+=( const Matrix4& v );
+	Matrix4& operator-=( const Matrix4& v );
+
 	float c[ 4 ][ 4 ];
 };
 
+/**
+	Math::Multiply - Matrix-Matrix Multiplication
+
+	Multiply two matrices together.
+**/
 inline Matrix4 Multiply( const Matrix4& m1, const Matrix4& m2 ) {
 	Matrix4 r;
 
@@ -41,18 +54,97 @@ inline Matrix4 Multiply( const Matrix4& m1, const Matrix4& m2 ) {
 	return r;
 }
 
-// Transform Matrix Multiply
+/**
+	Math::Multiply - Matrix-Vector Multiplication
+
+	Create a transform vector.
+**/
 inline Vector3 Multiply( const Matrix4& m, const Vector3& v ) {
 	Vector3 r;
 
 	for( int i = 0; i < 3; ++i ) {
-		for( int j = 0; j < 3; ++j ) {
-			r[ i ] = m.c[ i ][ 0 ] * v.x +
-					 m.c[ i ][ 1 ] * v.y +
-					 m.c[ i ][ 2 ] * v.z +
-					 m.c[ i ][ 3 ] * 1.0f;
-		}
+		r[ i ] = m.c[ i ][ 0 ] * v.x +
+					m.c[ i ][ 1 ] * v.y +
+					m.c[ i ][ 2 ] * v.z;
 	}
+
+	return r;
+}
+
+inline Matrix4 Scale( const Vector3& v  ) {
+	Matrix4 m;
+
+	m.c[ 0 ][ 0 ] = v.x;
+	m.c[ 1 ][ 1 ] = v.y;
+	m.c[ 2 ][ 2 ] = v.z;
+
+	return m;
+}
+
+inline Matrix4 Translate( const Vector3& v ) {
+	Matrix4 m;
+
+	m.c[ 0 ][ 2 ] = v.x;
+	m.c[ 1 ][ 2 ] = v.y;
+	m.c[ 2 ][ 2 ] = v.z;
+
+	return m;
+}
+
+inline Matrix4 Shear( const Vector3& x, const Vector3& y, const Vector3& z ) {
+	Matrix4 m;
+
+	m.c[ 1 ][ 0 ] = x.y;
+	m.c[ 2 ][ 0 ] = x.z;
+
+	m.c[ 0 ][ 1 ] = y.x;
+	m.c[ 2 ][ 1 ] = y.z;
+
+	m.c[ 0 ][ 2 ] = z.x;
+	m.c[ 1 ][ 2 ] = z.y;
+
+	return m;
+}
+
+/**
+	Math::Euler
+
+	Creates a rotation matrix from pitch, yaw, and roll.
+	Parameters are in Degrees
+**/
+inline Matrix4 Euler( const float angleX, const float angleY, const float angleZ ) {
+	Matrix4 m;
+
+	float radX = angleX * PI_OVER_180;
+	float radY = angleY * PI_OVER_180;
+	float radZ = angleZ * PI_OVER_180;
+
+	float a = cosf( angleX );
+	float b = sinf( angleX );
+	float c = cosf( angleY );
+	float d = sinf( angleY );
+	float e = cosf( angleZ );
+	float f = sinf( angleZ );
+
+	float ad = a * d;
+	float bd = b * d;
+
+	m.c[ 0 ][ 0 ]  =  c * e;
+	m.c[ 0 ][ 1 ]  = -c * f;
+	m.c[ 0 ][ 2 ]  =  d;
+	m.c[ 1 ][ 0 ]  =  bd * e + a * f;
+	m.c[ 1 ][ 1 ]  = -bd * f + a * e;
+	m.c[ 1 ][ 2 ]  = -b * c;
+	m.c[ 2 ][ 0 ]  = -ad * e + b * f;
+	m.c[ 2 ][ 1 ]  =  ad * f + b * e;
+	m.c[ 2 ][ 2 ] =  a * c;
+
+	m.c[ 0 ][ 3 ] = m.c[ 1 ][ 3 ] = m.c[ 2 ][ 3 ] =
+	m.c[ 3 ][ 0 ] = m.c[ 3 ][ 1 ] = m.c[ 3 ][ 2 ] = 0.0f;
+
+	m.c[ 3 ][ 3 ] = 1;
+
+	return m;
 }
 
 }
