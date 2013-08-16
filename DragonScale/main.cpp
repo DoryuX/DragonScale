@@ -146,20 +146,31 @@ Math::Matrix4 Perspective( GLfloat fovY, GLfloat aspect, GLfloat zNear, GLfloat 
 	return Frustum( left, right, bottom, top, zNear, zFar );
 }
 
-Math::Matrix4 LookAt( const Math::Vector3& camera, const Math::Vector3& target, const Math::Vector3& up ) {
-	Math::Vector3 axisZ = Math::Normalize( camera - target );
-	Math::Vector3 axisX = Math::Normalize( Math::Cross( up, axisZ ) );
-	Math::Vector3 axisY = Math::Cross( axisZ, axisX );
-	
-	Math::Matrix4 rm = Math::Matrix4( axisX.x, axisY.x, axisZ.x, 0.0f,
-									  axisX.y, axisY.y, axisZ.y, 0.0f,
-									  axisX.z, axisY.z, axisZ.z, 0.0f,
-										 0.0f,	  0.0f,	   0.0f, 1.0f );
-	
-	// Translation Matrix
-	Math::Matrix4 tm = Math::Translate( -camera );
+Math::Matrix4 LookAt( const Math::Vector3& eye, const Math::Vector3& center, const Math::Vector3& up ) {
+	Math::Vector3 axisZ = Math::Normalize( center - eye );
+	Math::Vector3 axisY = Math::Normalize( up );
+	Math::Vector3 axisX = Math::Normalize( Math::Cross( axisZ, axisY ) );
+	axisY = Math::Cross( axisX, axisZ );
 
-	return Math::Multiply( rm, tm );
+	Math::Matrix4 m;
+
+	m.c[ 0 ][ 0 ] = axisX.x;
+	m.c[ 1 ][ 0 ] = axisX.y;
+	m.c[ 2 ][ 0 ] = axisX.z;
+
+	m.c[ 0 ][ 1 ] = axisY.x;
+	m.c[ 1 ][ 1 ] = axisY.y;
+	m.c[ 2 ][ 1 ] = axisY.z;
+
+	m.c[ 0 ][ 2 ] = -axisZ.x;
+	m.c[ 1 ][ 2 ] = -axisZ.y;
+	m.c[ 2 ][ 2 ] = -axisZ.z;
+
+	m.c[ 3 ][ 0 ] = -Math::Dot( axisX, eye );
+	m.c[ 3 ][ 1 ] = -Math::Dot( axisY, eye );
+	m.c[ 3 ][ 2 ] = Math::Dot( axisZ, eye );
+
+	return m;
 }
 
 int PollKeys( void ) {
@@ -306,13 +317,11 @@ int main( int argc, char* argv[] ) {
 	Math::Matrix4 model = Math::Matrix4();
 	Math::Matrix4 mv = Math::Multiply( view, model );
 
-	// GLuint mvpID = glGetUniformLocation( programID, "MVP" );
 	GLuint projID = glGetUniformLocation( programID, "PROJ" );
 	GLuint mvID = glGetUniformLocation( programID, "MODELVIEW" );
 
-	// glUniformMatrix4fv( mvpID, 1, GL_FALSE, &mvp.c[ 0 ][ 0 ] );
 	glUniformMatrix4fv( projID, 1, GL_FALSE, &projection.c[ 0 ][ 0 ] );
-	glUniformMatrix4fv( mvID, 1, GL_TRUE, &mv.c[ 0 ][ 0 ] );
+	glUniformMatrix4fv( mvID, 1, GL_FALSE, &mv.c[ 0 ][ 0 ] );
 
 	// Main Loop
 	while ( true ) {
@@ -326,7 +335,7 @@ int main( int argc, char* argv[] ) {
 						   Math::Vector3( up_pos[ 0 ], up_pos[ 1 ], up_pos[ 2 ] ) );
 
 			mv = Math::Multiply( view, model );
-			glUniformMatrix4fv( mvID, 1, GL_TRUE, &view.c[ 0 ][ 0 ] );
+			glUniformMatrix4fv( mvID, 1, GL_FALSE, &view.c[ 0 ][ 0 ] );
 		}
 
 		Render( 0, vertexBuffer, 0, 3, 0 );
