@@ -14,6 +14,11 @@
 
 const float PI_OVER_360 = ( float ) M_PI / 360.0f;
 
+static bool moving = false;
+static float camera_pos[ 3 ] = { 0.0f, 0.0f, 5.0f };
+static float target_pos[ 3 ] = { 0.0f, 0.0f, 0.0f };
+static float up_pos[ 3 ]	 = { 0.0f, 1.0f, 0.0f };
+
 void SDLDie( const char* msg ) {
 	printf( "%s: %s\n", msg, SDL_GetError() );
 	SDL_Quit();
@@ -137,11 +142,12 @@ Math::Matrix4 LookAt( const Math::Vector3& camera, const Math::Vector3& target, 
 	   -Dot( axisY, camera )
 	   -Dot( axisZ, camera )
 	*/
+	
 	Math::Matrix4 rm = Math::Matrix4( axisX.x, axisX.y, axisX.z, 0.0f,
 									  axisY.x, axisY.y, axisY.z, 0.0f,
 									  axisZ.x, axisZ.y, axisZ.z, 0.0f,
 										 0.0f,	  0.0f,	   0.0f, 1.0f );
-
+	
 	// Translation Matrix
 	Math::Matrix4 tm = Math::Translate( -camera );
 
@@ -154,11 +160,37 @@ int PollKeys( void ) {
 
 	while ( SDL_PollEvent( &event ) ) {
 		switch( event.type ) {
-			case SDL_KEYDOWN:					
+			case SDL_KEYDOWN:	
+				if ( event.key.keysym.sym == SDLK_a ) {
+					camera_pos[ 0 ] -= 1.0f;
+					moving = true;
+				}
+				if ( event.key.keysym.sym == SDLK_d ) {
+					camera_pos[ 0 ] += 1.0f;
+					moving = true;
+				}
+				if ( event.key.keysym.sym == SDLK_r ) {
+					camera_pos[ 1 ] += 1.0f;
+					moving = true;
+				}
+				if ( event.key.keysym.sym == SDLK_f ) {
+					camera_pos[ 1 ] -= 1.0f;
+					moving = true;
+				}
+				if ( event.key.keysym.sym == SDLK_w ) {
+					camera_pos[ 2 ] -= 1.0f;
+					moving = true;
+				}
+				if ( event.key.keysym.sym == SDLK_s ) {
+					camera_pos[ 2 ] += 1.0f;
+					moving = true;
+				}
 				break;
 			case SDL_KEYUP:
 				if ( event.key.keysym.sym == SDLK_ESCAPE ) {
 					status = SDL_EventType::SDL_QUIT;
+				} else {
+					moving = false;
 				}
 				break;
 			case SDL_QUIT:
@@ -256,9 +288,9 @@ int main( int argc, char* argv[] ) {
 	glUseProgram( programID );
 
 	Math::Matrix4 projection = Perspective( 45.0f, 4.0f / 3.0f, 0.1f, 100.0f );
-	Math::Matrix4 view = LookAt( Math::Vector3( 4.0f, 3.0f, 3.0f ),
-								 Math::Vector3( 0.0f, 0.0f, 0.0f ),
-								 Math::Vector3( 0.0f, 1.0f, 0.0f ) );
+	Math::Matrix4 view = LookAt( Math::Vector3( camera_pos[ 0 ], camera_pos[ 1 ], camera_pos[ 2 ] ),
+								 Math::Vector3( target_pos[ 0 ], target_pos[ 1 ], target_pos[ 2 ] ),
+								 Math::Vector3( up_pos[ 0 ], up_pos[ 1 ], up_pos[ 2 ] ) );
 	Math::Matrix4 model = Math::Matrix4();
 	Math::Matrix4 mvp = Math::Multiply( projection, Math::Multiply ( view, model ) );
 
@@ -269,6 +301,15 @@ int main( int argc, char* argv[] ) {
 	while ( true ) {
 		if ( PollKeys() == SDL_EventType::SDL_QUIT ) {
 			break;
+		}
+
+		if ( moving ) {
+			view = LookAt( Math::Vector3( camera_pos[ 0 ], camera_pos[ 1 ], camera_pos[ 2 ] ),
+						   Math::Vector3( target_pos[ 0 ], target_pos[ 1 ], target_pos[ 2 ] ),
+						   Math::Vector3( up_pos[ 0 ], up_pos[ 1 ], up_pos[ 2 ] ) );
+
+			mvp = Math::Multiply( projection, Math::Multiply ( view, model ) );
+			glUniformMatrix4fv( mvpID, 1, GL_FALSE, &mvp.c[ 0 ][ 0 ] );
 		}
 
 		Render( 0, vertexBuffer, 0, 3, 0 );

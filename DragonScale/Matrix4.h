@@ -84,9 +84,9 @@ inline Matrix4 Scale( const Vector3& v  ) {
 inline Matrix4 Translate( const Vector3& v ) {
 	Matrix4 m;
 
-	m.c[ 0 ][ 2 ] = v.x;
-	m.c[ 1 ][ 2 ] = v.y;
-	m.c[ 2 ][ 2 ] = v.z;
+	m.c[ 0 ][ 3 ] = v.x;
+	m.c[ 1 ][ 3 ] = v.y;
+	m.c[ 2 ][ 3 ] = v.z;
 
 	return m;
 }
