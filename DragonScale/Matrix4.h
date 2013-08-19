@@ -5,7 +5,9 @@
 
 namespace Math {
 
-const float PI_OVER_180 = 0.1745329251f;
+const float PI = 3.14159265359f;
+const float PI_OVER_180 = PI / 180.0f;
+const float PI_OVER_360 = PI / 360.0f;
 
 class Matrix4
 {
