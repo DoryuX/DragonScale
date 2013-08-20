@@ -19,6 +19,12 @@ static const int WINDOW_WIDTH = 800;
 
 static const char* TITLE = "DragonScale";
 
+GLuint vao[2];
+GLuint buffers[2];
+
+const int G_POSITION = 0;
+const int G_COLOR = 1;
+
 int PollKeys( void ) {
 	int status = 0;
 	SDL_Event event;
@@ -75,21 +81,39 @@ int PollKeys( void ) {
 	return status;
 }
 
-void Render( const GLuint vertexID, const GLuint vertexBuffer, 
-			 const GLuint attrib, const GLuint size, const GLuint stride ) {
-	glEnableVertexAttribArray( vertexID );
-	glBindBuffer( GL_ARRAY_BUFFER, vertexBuffer );
-	glVertexAttribPointer(
-		attrib,
-		3,
-		GL_FLOAT,
-		GL_FALSE,
-		stride,
-		( void* ) 0 );
+/*
+	Assumes vertex and color data are the same size.
+*/
+void InitObject( const GLuint vao, 
+				const GLuint vID, const GLvoid* vData,
+				const GLuint cID, const GLvoid* cData,
+				const GLuint size ) {
+	GLuint buffers[ 2 ];
 
+	// Load Triangle Data
+	glBindVertexArray( vao );
+
+	glGenBuffers( 2, buffers );
+
+	// Vertex Position
+	glEnableVertexAttribArray( vID );
+	glBindBuffer( GL_ARRAY_BUFFER, buffers[ G_POSITION ] );
+	glBufferData( GL_ARRAY_BUFFER, sizeof( GLfloat ) * 3 * size, vData, GL_STATIC_DRAW );	
+	glVertexAttribPointer( vID, 3, GL_FLOAT, GL_FALSE, 0, 0 );
+
+	// Color Data
+	glEnableVertexAttribArray( cID );
+	glBindBuffer( GL_ARRAY_BUFFER, buffers[ G_COLOR ] );
+	glBufferData( GL_ARRAY_BUFFER, sizeof( GLfloat ) * 3 * size, cData, GL_STATIC_DRAW );
+	glVertexAttribPointer( cID, 3, GL_FLOAT, GL_FALSE, 0, 0 );
+
+	glBindVertexArray( 0 );
+}
+
+void Render( const GLuint vao, const GLuint size ) {
+	glBindVertexArray( vao );
 	glDrawArrays( GL_TRIANGLES, 0, size );
-
-	glDisableVertexAttribArray( vertexID );
+	glBindVertexArray( 0 );
 }
 
 int main( int argc, char* argv[] ) {
@@ -137,24 +161,11 @@ int main( int argc, char* argv[] ) {
 		 0.0f,  1.0f, 0.0f
 	};
 
-	GLuint triangleBuffer;
-	glGenBuffers( 1, &triangleBuffer );	
-	glBindBuffer( GL_ARRAY_BUFFER, triangleBuffer );
-	glBufferData( GL_ARRAY_BUFFER, 
-				sizeof( triangleBufferData ), 
-				triangleBufferData,
-				GL_STATIC_DRAW );
-
 	static const GLfloat triangleColorData[] = { 
 		1.0f, 0.0f, 0.0f,
 		0.0f, 1.0f, 0.0f,
 		0.0f, 0.0f, 1.0f
 	};
-
-	GLuint triangleColorBuffer;
-	glGenBuffers(1, &triangleColorBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, triangleColorBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(triangleColorData), triangleColorData, GL_STATIC_DRAW);
 
 	// Cube Data
 	static const GLfloat cubeBufferData[] = {
@@ -196,16 +207,8 @@ int main( int argc, char* argv[] ) {
 		 1.0f,-1.0f, 1.0f
 	};
 
-	GLuint cubeBuffer;
-	glGenBuffers( 1, &cubeBuffer );
-	glBindBuffer( GL_ARRAY_BUFFER, cubeBuffer );
-	glBufferData( GL_ARRAY_BUFFER, 
-				sizeof( cubeBufferData ),
-				cubeBufferData,
-				GL_STATIC_DRAW );	
-
 	// One color for each vertex. They were generated randomly.
-	static const GLfloat colorBufferData[] = {
+	static const GLfloat cubeColorData[] = {
 		0.583f,  0.771f,  0.014f,
 		0.609f,  0.115f,  0.436f,
 		0.327f,  0.483f,  0.844f,
@@ -244,11 +247,6 @@ int main( int argc, char* argv[] ) {
 		0.982f,  0.099f,  0.879f
 	};
 
-	GLuint colorBuffer;
-	glGenBuffers(1, &colorBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(colorBufferData), colorBufferData, GL_STATIC_DRAW);
-
 	// GLSL Shaders
 	GLuint programID = DS::LoadShaders( "simple.vert", "simple.frag" );
 	glUseProgram( programID );
@@ -256,9 +254,19 @@ int main( int argc, char* argv[] ) {
 	GLuint vertexID = glGetAttribLocation( programID, "vPos_model" );
 	GLuint colorID = glGetAttribLocation( programID, "vColor" );
 
-	GLuint vertexArrayID;
-	glGenVertexArrays( 1, &vertexArrayID );
-	glBindVertexArray( vertexArrayID );
+	glGenVertexArrays( 2, &vao[ 0 ] );
+
+	// Cube
+	InitObject( vao[ 0 ], 
+				vertexID, &cubeBufferData[ 0 ], 
+				colorID, &cubeColorData[ 0 ], 
+				36 );
+
+	// Triangle
+	InitObject( vao[ 1 ], 
+				vertexID, &triangleBufferData[ 0 ], 
+				colorID, &triangleColorData[ 0 ], 
+				3 );
 
 	Math::Matrix4 projection = DS::Perspective( 
 								45.0f, 
@@ -303,35 +311,8 @@ int main( int argc, char* argv[] ) {
 
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-		// Cube
-		Render( vertexID, cubeBuffer, 0, 36, 0 );
-
-		glEnableVertexAttribArray( colorID );
-		glBindBuffer( GL_ARRAY_BUFFER, colorBuffer );
-		glVertexAttribPointer(
-			colorID,                          
-			3,                               
-			GL_FLOAT,                         
-			GL_FALSE,                        
-			0,                               
-			(void*)0                          
-		);
-
-		// Triangle
-		/*
-		Render( vertexID, triangleBuffer, 0, 3, 0 );
-
-		glEnableVertexAttribArray( colorID );
-		glBindBuffer( GL_ARRAY_BUFFER, triangleColorBuffer );
-		glVertexAttribPointer(
-			colorID,                          
-			3,                               
-			GL_FLOAT,                         
-			GL_FALSE,                        
-			0,                               
-			(void*)0                          
-		);
-		*/
+		Render( vao[ 0 ], 36 );	// Cube
+		Render( vao[ 1 ], 3 );	// Triangle
 		
 		SDL_GL_SwapWindow( mainWindow );		
 	}
