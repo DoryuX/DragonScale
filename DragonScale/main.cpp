@@ -278,15 +278,20 @@ int main( int argc, char* argv[] ) {
 							Math::Vector3( target_pos[ 0 ], target_pos[ 1 ], target_pos[ 2 ] ),
 							Math::Vector3( up_pos[ 0 ], up_pos[ 1 ], up_pos[ 2 ] ) );
 
-	Math::Matrix4 model = Math::Matrix4();
+	Math::Matrix4 cubeModel = Math::Translate( Math::Vector3( 5.0f, 0.0f, 0.0f ) );
+	Math::Matrix4 cubeModel2 = Math::Translate( Math::Vector3( -5.0f, 0.0f, 0.0f ) );
+	Math::Matrix4 triangleModel = Math::Translate( Math::Vector3( 0.0f, 5.0f, 0.0f ) );
+	Math::Matrix4 triangleModel2 = Math::Translate( Math::Vector3( 0.0f, -5.0f, 0.0f ) );
 
-	Math::Matrix4 mv = Math::Multiply( view, model );
+	Math::Matrix4 cmv = Math::Multiply( view, cubeModel.GetTranspose() );
+	Math::Matrix4 cmv2 = Math::Multiply( view, cubeModel2.GetTranspose() );
+	Math::Matrix4 tmv = Math::Multiply( view, triangleModel.GetTranspose() );
+	Math::Matrix4 tmv2 = Math::Multiply( view, triangleModel2.GetTranspose() );
 
 	GLuint projID = glGetUniformLocation( programID, "PROJ" );
 	GLuint mvID = glGetUniformLocation( programID, "MODELVIEW" );
 
 	glUniformMatrix4fv( projID, 1, GL_FALSE, &projection.c[ 0 ][ 0 ] );
-	glUniformMatrix4fv( mvID, 1, GL_FALSE, &mv.c[ 0 ][ 0 ] );
 
 	glEnable( GL_DEPTH_TEST );
 	glDepthFunc( GL_LESS );
@@ -304,15 +309,23 @@ int main( int argc, char* argv[] ) {
 							Math::Vector3( target_pos[ 0 ], target_pos[ 1 ], target_pos[ 2 ] ),
 							Math::Vector3( up_pos[ 0 ], up_pos[ 1 ], up_pos[ 2 ] ) );
 
-			mv = Math::Multiply( view, model );
-
-			glUniformMatrix4fv( mvID, 1, GL_FALSE, &view.c[ 0 ][ 0 ] );
+			cmv = Math::Multiply( view, cubeModel.GetTranspose() );
+			cmv2 = Math::Multiply( view, cubeModel2.GetTranspose() );
+			tmv = Math::Multiply( view, triangleModel.GetTranspose() );
+			tmv2 = Math::Multiply( view, triangleModel2.GetTranspose() );
 		}
 
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
+		glUniformMatrix4fv( mvID, 1, GL_FALSE, &cmv.c[ 0 ][ 0 ] );
 		Render( vao[ 0 ], 36 );	// Cube
+		glUniformMatrix4fv( mvID, 1, GL_FALSE, &cmv2.c[ 0 ][ 0 ] );
+		Render( vao[ 0 ], 36 );	// Cube2
+
+		glUniformMatrix4fv( mvID, 1, GL_FALSE, &tmv.c[ 0 ][ 0 ] );
 		Render( vao[ 1 ], 3 );	// Triangle
+		glUniformMatrix4fv( mvID, 1, GL_FALSE, &tmv2.c[ 0 ][ 0 ] );
+		Render( vao[ 1 ], 3 );	// Triangle2
 		
 		SDL_GL_SwapWindow( mainWindow );		
 	}
