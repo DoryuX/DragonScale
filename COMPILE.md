@@ -2,6 +2,8 @@
 
 ## Compiling Under Visual Studio 2012
 
+Make sure opengl32.dll is included Additional Dependencies.
+
 I ran into issues with Visual Studio giving me linker errors when looking for the CRT Debug libs. There's probably a better way to solve this, but after
 much searching I finally got the code to run.
 #### Visual Studio 2012 - In Solution Explorer
@@ -53,3 +55,8 @@ etc.
 - Under Linker > Input
 	- Add 'glew32.lib' to 'Additional Dependencies'
 - Copy and Paste 'glew32.dll' in the directory that contains the source code for this project.
+
+#### To get the console for debugging purposes
+- Right-click project, go to properties.
+- Under Linker > System
+	- Switch the SubSystem to Console instead of Windows.

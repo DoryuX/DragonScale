@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <cstdio>
+#include <iostream>
 
 #include <GL/glew.h>
 #include <SDL.h>
@@ -10,7 +11,7 @@
 #include "Matrix4.h"
 
 static bool moving = false;
-static float camera_pos[ 3 ] = { 0.0f, 0.0f, 5.0f };
+static float camera_pos[ 3 ] = { 0.0f, 0.0f, 25.0f };
 static float target_pos[ 3 ] = { 0.0f, 0.0f, 0.0f };
 static float up_pos[ 3 ]	 = { 0.0f, 1.0f, 0.0f };
 
@@ -154,6 +155,10 @@ int main( int argc, char* argv[] ) {
 		DS::SDLDie( "Glew could not be initialized." );
 	}
 
+	std::cout << "GL Version: " << glGetString( GL_VERSION ) << std::endl;
+	std::cout << "GLSL Version: " << glGetString( GL_SHADING_LANGUAGE_VERSION ) << std::endl;
+
+
 	// Triangle Data
 	static const GLfloat triangleBufferData[] = {
 		-1.0f, -1.0f, 0.0f,
@@ -278,18 +283,14 @@ int main( int argc, char* argv[] ) {
 							Math::Vector3( target_pos[ 0 ], target_pos[ 1 ], target_pos[ 2 ] ),
 							Math::Vector3( up_pos[ 0 ], up_pos[ 1 ], up_pos[ 2 ] ) );
 
-	Math::Matrix4 cubeModel = Math::Translate( Math::Vector3( 5.0f, 0.0f, 0.0f ) );
-	Math::Matrix4 cubeModel2 = Math::Translate( Math::Vector3( -5.0f, 0.0f, 0.0f ) );
-	Math::Matrix4 triangleModel = Math::Translate( Math::Vector3( 0.0f, 5.0f, 0.0f ) );
-	Math::Matrix4 triangleModel2 = Math::Translate( Math::Vector3( 0.0f, -5.0f, 0.0f ) );
-
-	Math::Matrix4 cmv = Math::Multiply( view, cubeModel.GetTranspose() );
-	Math::Matrix4 cmv2 = Math::Multiply( view, cubeModel2.GetTranspose() );
-	Math::Matrix4 tmv = Math::Multiply( view, triangleModel.GetTranspose() );
-	Math::Matrix4 tmv2 = Math::Multiply( view, triangleModel2.GetTranspose() );
+	Math::Matrix4 cubeModel = Math::Translate( Math::Vector3( 5.0f, 0.0f, 0.0f ) ).GetTranspose();
+	Math::Matrix4 cubeModel2 = Math::Translate( Math::Vector3( -5.0f, 0.0f, 0.0f ) ).GetTranspose();
+	Math::Matrix4 triangleModel = Math::Translate( Math::Vector3( 0.0f, 5.0f, 0.0f ) ).GetTranspose();
+	Math::Matrix4 triangleModel2 = Math::Translate( Math::Vector3( 0.0f, -5.0f, 0.0f ) ).GetTranspose();
 
 	GLuint projID = glGetUniformLocation( programID, "PROJ" );
-	GLuint mvID = glGetUniformLocation( programID, "MODELVIEW" );
+	GLuint mvID = glGetUniformLocation( programID, "VIEW" );
+	GLuint modID = glGetUniformLocation( programID, "MODEL" );
 
 	glUniformMatrix4fv( projID, 1, GL_FALSE, &projection.c[ 0 ][ 0 ] );
 
@@ -297,34 +298,35 @@ int main( int argc, char* argv[] ) {
 	glDepthFunc( GL_LESS );
 	glClearColor( 0.0f, 0.0f, 1.0f, 1.0f );
 
+	bool firstPass = true;
+
 	// Main Loop
 	while ( true ) {
 		if ( PollKeys() == SDL_EventType::SDL_QUIT ) {
 			break;
 		}
 
-		if ( moving ) {
+		if ( moving || firstPass ) {
 			view = DS::LookAt( 
 							Math::Vector3( camera_pos[ 0 ], camera_pos[ 1 ], camera_pos[ 2 ] ),
 							Math::Vector3( target_pos[ 0 ], target_pos[ 1 ], target_pos[ 2 ] ),
 							Math::Vector3( up_pos[ 0 ], up_pos[ 1 ], up_pos[ 2 ] ) );
 
-			cmv = Math::Multiply( view, cubeModel.GetTranspose() );
-			cmv2 = Math::Multiply( view, cubeModel2.GetTranspose() );
-			tmv = Math::Multiply( view, triangleModel.GetTranspose() );
-			tmv2 = Math::Multiply( view, triangleModel2.GetTranspose() );
+			glUniformMatrix4fv( mvID, 1, GL_FALSE, &view.c[ 0 ][ 0 ] );
+
+			if ( firstPass ) { firstPass = false; }
 		}
 
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-		glUniformMatrix4fv( mvID, 1, GL_FALSE, &cmv.c[ 0 ][ 0 ] );
+		glUniformMatrix4fv( modID, 1, GL_FALSE, &cubeModel.c[ 0 ][ 0 ] );
 		Render( vao[ 0 ], 36 );	// Cube
-		glUniformMatrix4fv( mvID, 1, GL_FALSE, &cmv2.c[ 0 ][ 0 ] );
+		glUniformMatrix4fv( modID, 1, GL_FALSE, &cubeModel2.c[ 0 ][ 0 ] );
 		Render( vao[ 0 ], 36 );	// Cube2
 
-		glUniformMatrix4fv( mvID, 1, GL_FALSE, &tmv.c[ 0 ][ 0 ] );
+		glUniformMatrix4fv( modID, 1, GL_FALSE, &triangleModel.c[ 0 ][ 0 ] );
 		Render( vao[ 1 ], 3 );	// Triangle
-		glUniformMatrix4fv( mvID, 1, GL_FALSE, &tmv2.c[ 0 ][ 0 ] );
+		glUniformMatrix4fv( modID, 1, GL_FALSE, &triangleModel2.c[ 0 ][ 0 ] );
 		Render( vao[ 1 ], 3 );	// Triangle2
 		
 		SDL_GL_SwapWindow( mainWindow );		
